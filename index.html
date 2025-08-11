@@ -1,0 +1,715 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OWO BhamNow - Traffic Dashboard</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #1ca8ba 0%, #0B444C 100%);
+            color: #333;
+            min-height: 100vh;
+        }
+        
+        .dashboard {
+            max-width: 1000px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            border-bottom: 3px solid #667eea;
+            padding-bottom: 20px;
+        }
+        
+        .header h1 {
+            color: #1ca8ba;
+            margin: 0;
+            font-size: 2.5em;
+            font-weight: 300;
+        }
+        
+        .header p {
+            color: #666;
+            font-size: 1.2em;
+            margin: 10px 0 0 0;
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 40px;
+        }
+        
+        .stat-card {
+            background: linear-gradient(135deg, #ff6b6b, #ee5a24);
+            color: white;
+            padding: 25px;
+            border-radius: 12px;
+            text-align: center;
+            box-shadow: 0 8px 16px rgba(0,0,0,0.1);
+            transition: transform 0.3s ease;
+        }
+        
+        .stat-card:nth-child(2) { background: linear-gradient(135deg, #4ecdc4, #44a08d); }
+        .stat-card:nth-child(3) { background: linear-gradient(135deg, #45b7d1, #2980b9); }
+        .stat-card:nth-child(4) { background: linear-gradient(135deg, #96ceb4, #27ae60); }
+        
+        .stat-card:hover { transform: translateY(-5px); }
+        
+        .stat-value {
+            font-size: 2.5em;
+            font-weight: bold;
+            margin: 0;
+        }
+        
+        .stat-label {
+            font-size: 1em;
+            opacity: 0.9;
+            margin: 5px 0 0 0;
+        }
+        
+        .charts-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 30px;
+            margin-bottom: 40px;
+        }
+        
+        .chart-container {
+            background: #f8f9fa;
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.05);
+        }
+        
+        .chart-title {
+            text-align: center;
+            margin-bottom: 10px;
+            color: #333;
+            font-size: 1.3em;
+            font-weight: 600;
+        }
+        
+        .chart-explanation {
+            text-align: center;
+            margin-bottom: 20px;
+            color: #666;
+            font-size: 0.9em;
+            padding: 10px;
+            background: #e8f4fd;
+            border-radius: 8px;
+            border-left: 4px solid #4ecdc4;
+        }
+        
+        .explanation-box {
+            background: #e3f2fd;
+            border: 1px solid #90caf9;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 20px 0;
+        }
+        
+        .explanation-title {
+            font-weight: bold;
+            color: #1976d2;
+            margin-bottom: 8px;
+        }
+        
+        .insights {
+            background: #f1f3f4;
+            padding: 25px;
+            border-radius: 12px;
+            border-left: 5px solid #667eea;
+            margin: 30px 0;
+        }
+        
+        .insights h3 {
+            color: #667eea;
+            margin-top: 0;
+        }
+        
+        .insight-item {
+            margin: 15px 0;
+            padding: 15px;
+            background: white;
+            border-radius: 8px;
+            border-left: 3px solid #4ecdc4;
+        }
+        
+        .source-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin: 30px 0;
+        }
+        
+        .source-card {
+            background: white;
+            border: 2px solid #e0e0e0;
+            border-radius: 12px;
+            padding: 20px;
+            transition: all 0.3s ease;
+        }
+        
+        .source-card:hover {
+            border-color: #667eea;
+            box-shadow: 0 8px 16px rgba(0,0,0,0.1);
+        }
+        
+        .source-name {
+            font-size: 1.4em;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+        }
+        
+        .source-metric {
+            display: flex;
+            justify-content: space-between;
+            margin: 8px 0;
+            padding: 5px 0;
+            border-bottom: 1px solid #f0f0f0;
+        }
+        
+        .metric-label { color: #666; }
+        .metric-value { font-weight: bold; color: #333; }
+        
+        .performance-badge {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 0.8em;
+            font-weight: bold;
+            margin-left: 10px;
+        }
+        
+        .excellent { background: #d4edda; color: #155724; }
+        .good { background: #d1ecf1; color: #0c5460; }
+        .average { background: #fff3cd; color: #856404; }
+        .poor { background: #f8d7da; color: #721c24; }
+    </style>
+</head>
+<body>
+    <div class="dashboard">
+        <div class="header">
+            <h1> <strong>OPERATION WIPE OUT</strong></h1>
+          <p>Data Period:&nbsp; <strong>Jan 1 to Aug 1, 2025</strong></p>
+            <p>Traffic Sources: Direct, Google, BhamNow, HvilleBlast, BamaBuzz&nbsp;</p>
+        </div>
+        
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-value">4,486</div>
+                <div class="stat-label">Total Visitors</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">1,601</div>
+                <div class="stat-label">Engaged Visitors</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">35.7%</div>
+                <div class="stat-label">Engagement Rate</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">19,064</div>
+                <div class="stat-label">Total Actions</div>
+            </div>
+        </div>
+        
+        <h2 style="text-align: center; color: #667eea; margin-bottom: 30px;">📈 Visual Breakdown of OWO Traffic</h2>
+        
+        <div class="charts-grid">
+            <div class="chart-container">
+                <div class="chart-title">Where OWO Visitors Come From</div>
+                <div class="chart-explanation">
+                This pie chart shows what percentage of our visitors come from each source. "Direct" means people typed our website address directly or used a bookmark.</div>
+                <canvas id="sessionsChart"></canvas>
+            </div>
+            
+            <div class="chart-container">
+                <div class="chart-title">Engagement Quality by Source</div>
+                <div class="chart-explanation">
+                  This shows what percentage of visitors from each source actually engaged with our site (spent time, clicked around, etc.). Higher percentages mean better quality traffic.
+              </div>
+                <canvas id="engagementChart"></canvas>
+            </div>
+            
+            <div class="chart-container">
+                <div class="chart-title">Total Visitors vs Engaged Visitors</div>
+                <div class="chart-explanation">
+                  The red bars show total visitors, the blue bars show how many actually engaged. The closer these bars are, the better OWO traffic quality from that source.
+              </div>
+                <canvas id="comparisonChart"></canvas>
+            </div>
+            
+            <div class="chart-container">
+                <div class="chart-title">How Long Visitors Stay</div>
+                <div class="chart-explanation">
+                  This shows the average time visitors from each source spend on OWO website. Longer times usually mean visitors are more interested in the content.
+              </div>
+                <canvas id="timeChart"></canvas>
+            </div>
+        </div>
+        
+        <div class="source-cards">
+            <div class="source-card">
+                <div class="source-name">
+                    🔗 Direct Traffic
+                    <span class="performance-badge average">Needs Work</span>
+                </div>
+                <div class="source-metric">
+                    <span class="metric-label">Visitors:</span>
+                    <span class="metric-value">2,855 (63.6%)</span>
+                </div>
+                <div class="source-metric">
+                    <span class="metric-label">Engagement Rate:</span>
+                    <span class="metric-value">30.9%</span>
+                </div>
+                <div class="source-metric">
+                    <span class="metric-label">Avg. Time:</span>
+                    <span class="metric-value">23 seconds</span>
+                </div>
+                <div class="source-metric">
+                    <span class="metric-label">Actions/Visit:</span>
+                    <span class="metric-value">4.0</span>
+                </div>
+                <div style="margin-top: 10px; font-size: 0.9em; color: #666;">
+                    <strong>What this means:</strong> Most of OWO visitors come directly to the site, but only 3 out of 10 actually engage. The homepage may need improvements.
+                </div>
+            </div>
+            
+            <div class="source-card">
+                <div class="source-name">
+                    🔍 Google Search
+                    <span class="performance-badge excellent">Excellent</span>
+                </div>
+                <div class="source-metric">
+                    <span class="metric-label">Visitors:</span>
+                    <span class="metric-value">1,122 (25.0%)</span>
+                </div>
+                <div class="source-metric">
+                    <span class="metric-label">Engagement Rate:</span>
+                    <span class="metric-value">52.4%</span>
+                </div>
+                <div class="source-metric">
+                    <span class="metric-label">Avg. Time:</span>
+                    <span class="metric-value">48 seconds</span>
+                </div>
+                <div class="source-metric">
+                    <span class="metric-label">Actions/Visit:</span>
+                    <span class="metric-value">5.0</span>
+                </div>
+                <div style="margin-top: 10px; font-size: 0.9em; color: #666;">
+                    <strong>What this means:</strong> Google sends OWO high-quality visitors who stay longer and engage more. This is our best traffic source.
+                </div>
+            </div>
+            
+            <div class="source-card">
+                <div class="source-name">
+                    🌐 BhamNow.com
+                    <span class="performance-badge average">Average</span>
+                </div>
+                <div class="source-metric">
+                    <span class="metric-label">Visitors:</span>
+                    <span class="metric-value">375 (8.4%)</span>
+                </div>
+                <div class="source-metric">
+                    <span class="metric-label">Engagement Rate:</span>
+                    <span class="metric-value">30.9%</span>
+                </div>
+                <div class="source-metric">
+                    <span class="metric-label">Avg. Time:</span>
+                    <span class="metric-value">27 seconds</span>
+                </div>
+                <div class="source-metric">
+                    <span class="metric-label">Actions/Visit:</span>
+                    <span class="metric-value">4.1</span>
+                </div>
+                <div style="margin-top: 10px; font-size: 0.9em; color: #666;">
+                    <strong>What this means:</strong> Decent volume with average engagement. A reliable secondary source.
+                </div>
+            </div>
+            
+            <div class="source-card">
+                <div class="source-name">
+                    🌐 HvilleBlast.com
+                    <span class="performance-badge poor">Poor</span>
+                </div>
+                <div class="source-metric">
+                    <span class="metric-label">Visitors:</span>
+                    <span class="metric-value">106 (2.4%)</span>
+                </div>
+                <div class="source-metric">
+                    <span class="metric-label">Engagement Rate:</span>
+                    <span class="metric-value">11.3%</span>
+                </div>
+                <div class="source-metric">
+                    <span class="metric-label">Avg. Time:</span>
+                    <span class="metric-value">4 seconds</span>
+                </div>
+                <div class="source-metric">
+                    <span class="metric-label">Actions/Visit:</span>
+                    <span class="metric-value">3.4</span>
+                </div>
+                <div style="margin-top: 10px; font-size: 0.9em; color: #666;">
+                    <strong>What this means:</strong> Low engagement and very short visits.
+                </div>
+            </div>
+            
+            <div class="source-card">
+                <div class="source-name">
+                    🌐 TheBamaBuzz.com
+                    <span class="performance-badge poor">Poor</span>
+                </div>
+                <div class="source-metric">
+                    <span class="metric-label">Visitors:</span>
+                    <span class="metric-value">28 (0.6%)</span>
+                </div>
+                <div class="source-metric">
+                    <span class="metric-label">Engagement Rate:</span>
+                    <span class="metric-value">10.7%</span>
+                </div>
+                <div class="source-metric">
+                    <span class="metric-label">Avg. Time:</span>
+                    <span class="metric-value">2 seconds</span>
+                </div>
+                <div class="source-metric">
+                    <span class="metric-label">Actions/Visit:</span>
+                    <span class="metric-value">3.1</span>
+                </div>
+                <div style="margin-top: 10px; font-size: 0.9em; color: #666;">
+                    <strong>What this means:</strong> Very low volume and poor engagement. This source isn't providing value.
+                </div>
+            </div>
+        </div>
+        
+        <div class="insights">
+            <h3>📊 Key Insights & What They Mean</h3>
+            
+            <div class="insight-item">
+                <strong>🎯 Direct Traffic Opportunity:</strong> 63.6% of OWO visitors come directly to the  site, showing strong brand awareness. However, only 31% engage, suggesting the homepage or landing experience may need improvement to better capture visitor interest.
+            </div>
+            
+            <div class="insight-item">
+                <strong>🔍 Google is Your Golden Source:</strong> Google visitors have the highest engagement rate (52.4%) and stay longest (48 seconds).
+            </div>
+            
+            <div class="insight-item">
+                <strong>📈 Quality vs Quantity Gap:</strong> We have good visitor volume but overall engagement is only 35.7%.
+            </div>
+            
+            <div class="insight-item">
+                <strong>⚠️ Underperforming Sources:</strong> The two smallest sources (HvilleBlast and BamaBuzz) have very poor engagement rates and extremely short visit times.
+            </div>
+            
+      </div>
+		
+		<h2 style="text-align: center; color: #667eea; margin: 40px 0 30px 0;">📄 Page Performance Analysis</h2>
+        
+        <div class="explanation-box">
+            <div class="explanation-title">🤔 What does page performance tell you?</div>
+            This section shows which pages on our website are most popular and engaging. It helps you understand what content resonates with visitors and where you should focus your content efforts.
+        </div>
+        
+        <div class="charts-grid">
+            <div class="chart-container">
+                <div class="chart-title">Most Popular Pages</div>
+                <div class="chart-explanation">
+                    Shows which pages get the most views. Your homepage dominates, but look at which other pages attract visitors.
+                </div>
+                <canvas id="pageViewsChart"></canvas>
+            </div>
+            
+            <div class="chart-container">
+                <div class="chart-title">Page Engagement Time</div>
+                <div class="chart-explanation">
+                    Shows how long visitors spend on each page. Longer times mean more engaging content. Notice some smaller pages have very high engagement!
+                </div>
+                <canvas id="pageEngagementChart"></canvas>
+            </div>
+            
+            <div class="chart-container">
+                <div class="chart-title">Page Efficiency: Views vs Engagement</div>
+                <div class="chart-explanation">
+                    Compares page popularity (bubble size) with engagement quality (Y-axis). Top-right bubbles are your best performing content.
+                </div>
+                <canvas id="pageEfficiencyChart"></canvas>
+            </div>
+            
+            <div class="chart-container">
+                <div class="chart-title">User Activity by Page</div>
+                <div class="chart-explanation">
+                    Shows total user interactions (events) per page. Higher bars mean more active engagement like clicks, scrolls, and downloads.
+                </div>
+                <canvas id="pageActivityChart"></canvas>
+            </div>
+        </div>
+        
+        <div style="background: #fff3e0; border: 1px solid #ffb74d; border-radius: 8px; padding: 20px; margin: 20px 0;">
+            <h4 style="color: #ef6c00; margin-top: 0;">🔍 Page Performance Insights</h4>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 15px;">
+              <div>
+                    <strong>🏠 Homepage Performance:</strong><br>
+                Our main page gets 64% of all views but has relatively low engagement time (14.5s). This confirms the need to improve the landing experience.
+            </div>
+                <div>
+                    <strong>🎯 Hidden Gems:</strong><br>
+                    "Partners" and "Resources" pages have excellent engagement (68s and 66s) despite lower traffic. Consider promoting these more.
+                </div>
+              <div>
+                    <strong>📊 Content Strategy:</strong><br>
+                Pages about specific topics (The Summit) perform well. We should create more focused, topic-specific content.
+            </div>
+              <div>
+                    <strong>💡 Optimization Opportunity:</strong><br>
+                Our best content isn't our most visited. Maybe use internal linking to guide visitors from the homepage to high-engagement pages.
+            </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Traffic source data
+        const trafficData = {
+            sources: ['Direct', 'Google', 'BhamNow.com', 'HvilleBlast.com', 'BamaBuzz.com'],
+            sessions: [2855, 1122, 375, 106, 28],
+            engagedSessions: [882, 588, 116, 12, 3],
+            engagementRate: [30.9, 52.4, 30.9, 11.3, 10.7],
+            avgTime: [23, 48, 27, 4, 2]
+        };
+        
+        const colors = ['#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4', '#FFA07A', '#FFB6C1'];
+        
+        // Wait for DOM to load
+        document.addEventListener('DOMContentLoaded', function() {
+            
+            // 1. Sessions Distribution Pie Chart
+            new Chart(document.getElementById('sessionsChart'), {
+                type: 'doughnut',
+                data: {
+                    labels: trafficData.sources,
+                    datasets: [{
+                        data: trafficData.sessions,
+                        backgroundColor: colors,
+                        borderWidth: 3,
+                        borderColor: '#fff'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            position: 'bottom'
+                        }
+                    }
+                }
+            });
+            
+            // 2. Engagement Rate Bar Chart
+            new Chart(document.getElementById('engagementChart'), {
+                type: 'bar',
+                data: {
+                    labels: trafficData.sources,
+                    datasets: [{
+                        label: 'Engagement Rate',
+                        data: trafficData.engagementRate,
+                        backgroundColor: colors,
+                        borderRadius: 8
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: { display: false }
+                    },
+                    scales: {
+                        y: { beginAtZero: true }
+                    }
+                }
+            });
+            
+            // 3. Sessions vs Engaged Sessions
+            new Chart(document.getElementById('comparisonChart'), {
+                type: 'bar',
+                data: {
+                    labels: trafficData.sources,
+                    datasets: [{
+                        label: 'Total Visitors',
+                        data: trafficData.sessions,
+                        backgroundColor: 'rgba(255, 107, 107, 0.8)'
+                    }, {
+                        label: 'Engaged Visitors',
+                        data: trafficData.engagedSessions,
+                        backgroundColor: 'rgba(78, 205, 196, 0.8)'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: { 
+                            beginAtZero: true,
+                            title: { display: true, text: 'Avg. Time (seconds)' }
+                        }
+                    }
+                }
+            });
+            
+            // 4. Average Time
+            new Chart(document.getElementById('timeChart'), {
+                type: 'line',
+                data: {
+                    labels: trafficData.sources,
+                    datasets: [{
+                        data: trafficData.avgTime,
+                        borderColor: '#667eea',
+                        backgroundColor: 'rgba(102, 126, 234, 0.1)',
+                        fill: true,
+                        tension: 0.4,
+                        pointBackgroundColor: colors,
+                        pointRadius: 6
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: { display: false }
+                    },
+                    scales: {
+                        y: { 
+                            beginAtZero: true,
+                            title: { display: true, text: 'Avg. Time (seconds)' }
+                        }
+                    }
+                }
+            });
+            
+            // Page performance data
+            const pageNames = ['Homepage', 'Partners', 'Resources', 'Operation Info', 'Join', 'Get Involved'];
+            const pageViews = [5471, 584, 553, 375, 345, 291];
+            const pageEngagement = [14.5, 68, 65.8, 42.8, 54.9, 30.1];
+            const pageEvents = [16797, 1333, 1597, 859, 774, 849];
+            
+            // 5. Page Views Chart
+            new Chart(document.getElementById('pageViewsChart'), {
+                type: 'bar',
+                data: {
+                    labels: pageNames,
+                    datasets: [{
+                        data: pageViews,
+                        backgroundColor: colors,
+                        borderRadius: 6
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    indexAxis: 'y',
+                    plugins: {
+                        legend: { display: false }
+                    },
+                    scales: {
+                        x: { beginAtZero: true }
+                    }
+                }
+            });
+            
+            // 6. Page Engagement Chart
+            new Chart(document.getElementById('pageEngagementChart'), {
+                type: 'bar',
+                data: {
+                    labels: pageNames,
+                    datasets: [{
+                        data: pageEngagement,
+                        backgroundColor: colors,
+                        borderRadius: 6
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: { display: false }
+                    },
+                    scales: {
+                        y: { beginAtZero: true }
+                    }
+                }
+            });
+            
+            // 7. Page Efficiency Scatter: Scatter plot comparing page views (X) and engagement time (Y) for each page
+            new Chart(document.getElementById('pageEfficiencyChart'), {
+                type: 'bubble',
+                data: {
+                    datasets: [{
+                        data: pageViews.map((views, i) => ({
+                            x: views,
+                            y: pageEngagement[i],
+                            r: Math.sqrt(views) / 3, // Scale the radius based on page views
+                            page: pageNames[i]
+                        })),
+                        backgroundColor: pageViews.map((_, i) => colors[i % colors.length]),
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    const data = context.raw;
+                                    return `${data.page}: Views ${data.x}, Engagement ${data.y}s`;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: { 
+                            title: { display: true, text: 'Page Views' },
+                            beginAtZero: true 
+                        },
+                        y: { 
+                            title: { display: true, text: 'Engagement Time (s)' },
+                            beginAtZero: true 
+                        }
+                    }
+                }
+            });
+            
+            // 8. Page Activity Chart
+            new Chart(document.getElementById('pageActivityChart'), {
+                type: 'bar',
+                data: {
+                    labels: pageNames,
+                    datasets: [{
+                        data: pageEvents,
+                        backgroundColor: pageViews.map((_, i) => colors[i % colors.length]),
+                        borderRadius: 6
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: { display: false }
+                    },
+                    scales: {
+                        y: { beginAtZero: true }
+                    }
+                }
+            });
+            
+        });
+    </script>
+</body>
+</html>
